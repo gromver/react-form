@@ -25,7 +25,7 @@
     "url": "git+ssh://git@github.com/gromver/rx-form.git"
   },
   "keywords": [
-    "react",
+    "rx",
     "form",
     "validate",
     "model"
@@ -38,11 +38,8 @@
   "homepage": "https://github.com/gromver/rx-form#readme",
   "dependencies": {
     "immutable": "^3.8.1",
-    "lodash": "^4.17.4"
-  },
-  "peerDependencies": {
-    "react": "^15.5.4",
-    "react-dom": "^15.5.4"
+    "lodash": "^4.17.4",
+    "rxjs": "^5.3.0"
   },
   "devDependencies": {
     "babel-cli": "^6.23.0",
@@ -56,11 +53,11 @@
     "copyfiles": "^1.2.0",
     "coveralls": "^2.13.0",
     "eslint": "^3.13.0",
-    "eslint-config-airbnb": "^14.1.0",
+    "eslint-config-airbnb": "^15.0.1",
     "eslint-config-jss": "^3.0.0",
     "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-jsx-a11y": "^4.0.0",
-    "eslint-plugin-react": "^6.10.3",
+    "eslint-plugin-jsx-a11y": "^5.0.3",
+    "eslint-plugin-react": "^7.0.1",
     "flow-bin": "^0.44.2",
     "flow-copy-source": "^1.1.0",
     "flow-typed": "^2.0.0",

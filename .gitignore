@@ -41,5 +41,4 @@ jspm_packages
 
 # lib
 lib
-/package_origin.json
 /src/Test.spec.js
