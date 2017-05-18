@@ -1,6 +1,6 @@
 import { is } from 'immutable'
 import { PendingState, SuccessState, WarningState, ErrorState, PristineState } from './states'
-import utils from '../formBase/utils'
+import utils from './utils'
 
 export default class StateTracker {
     constructor(onPushState) {
