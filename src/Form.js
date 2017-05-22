@@ -3,6 +3,7 @@ import { Subject } from 'rxjs/Subject'
 import { SuccessState, WarningState, ErrorState } from './states'
 import StateTracker from './StateTracker'
 import { Validator, MultiValidator } from './validators'
+import FormStateSubject from './rx/FormStateSubject'
 import utils from './utils'
 
 export default class Form {
@@ -12,12 +13,9 @@ export default class Form {
 
     dirtyAttributes;
 
-    /*
-     * @param StateTracker
-     */
     stateTracker;
 
-    stream = new Subject();
+    observable = new Subject();
 
     constructor(rawModel = {}) {
         const model = fromJS(this.prepareSourceModel(rawModel));
@@ -31,12 +29,20 @@ export default class Form {
         this.dirtyAttributes = [];
     }
 
+    /**
+     * Form state stream
+     * @returns {FormStateSubject}
+     */
+    getObservable() {
+        return new FormStateSubject(this);
+    }
+
     subscribe(cb) {
-        return this.stream.subscribe(cb);
+        return this.observable.subscribe(cb);
     }
 
     onStateChange(state) {
-        this.stream.next(state);
+        this.observable.next(state);
     }
 
     // EXTEND THIS
@@ -61,6 +67,9 @@ export default class Form {
         return model;
     }
 
+    /*
+     * build rules
+     */
     _builtRules;
 
     getBuiltRules() {
@@ -101,10 +110,6 @@ export default class Form {
         return rules;
     }
 
-    invalidateRules() {
-        this._builtRules = null;
-    }
-
     normalizeValidatorsArray(items) {
         return items.map(validator => {
             if (typeof validator === 'function') {
@@ -119,6 +124,9 @@ export default class Form {
         });
     }
 
+    /*
+     * setters
+     */
     /**
      * Устанавливает значение поля модели, поддержка глубинной установки значение: this.setAttribute('foo.bar', value)
      * @param attribute
@@ -142,6 +150,9 @@ export default class Form {
         });
     }
 
+    /*
+     * getters
+     */
     getAttribute(attribute) {
         const { model } = this;
 
@@ -150,34 +161,16 @@ export default class Form {
         return Iterable.isIterable(value) ? value.toJS() : value;
     }
 
+    getAttributeState(attribute) {
+        return this.stateTracker.getAttributeState(attribute);
+    }
+
     getInitialAttribute(attribute) {
         const { initialModel: model } = this;
 
         const value = model.getIn(utils.resolveAttribute(attribute));
 
         return Iterable.isIterable(value) ? value.toJS() : value;
-    }
-
-    isValidForm() {
-        
-    }
-
-    isDirtyForm() {
-        const { model, initialModel } = this;
-
-        return !model.equals(initialModel);
-    }
-
-    isDirtyAttribute(attribute) {
-        const { model, initialModel, dirtyAttributes } = this;
-
-        const path = utils.resolveAttribute(attribute);
-
-        return model.getIn(path) !== initialModel.getIn(path) || dirtyAttributes.indexOf(attribute) !== -1;
-    }
-
-    isChangedAttribute(attribute) {
-        return this.getAttribute(attribute) !== this.getInitialAttribute(attribute);
     }
 
     // состояние поля (PendingState, WarningState, SuccessState, ErrorState)
@@ -212,10 +205,6 @@ export default class Form {
         return state && (state instanceof WarningState) && state.message || null;
     }
 
-    hasErrors() {
-        return !!Object.values(this.stateTracker.state).find(state => state instanceof ErrorState);
-    }
-
     // @return state
     getFirstError() {
         const errors = Object.values(this.stateTracker.state).filter(state => state instanceof ErrorState).map(state => state.attribute);
@@ -230,6 +219,38 @@ export default class Form {
         return !useValidation ? this.prepareResultModel(this.model.toJS()) : this.validateForm().then(() => this.prepareResultModel(this.model.toJS()));
     }
 
+    /*
+     * form state
+     */
+    isValidForm() {
+        
+    }
+
+    isDirtyForm() {
+        const { model, initialModel } = this;
+
+        return !model.equals(initialModel);
+    }
+
+    isDirtyAttribute(attribute) {
+        const { model, initialModel, dirtyAttributes } = this;
+
+        const path = utils.resolveAttribute(attribute);
+
+        return model.getIn(path) !== initialModel.getIn(path) || dirtyAttributes.indexOf(attribute) !== -1;
+    }
+
+    isChangedAttribute(attribute) {
+        return this.getAttribute(attribute) !== this.getInitialAttribute(attribute);
+    }
+
+    hasErrors() {
+        return !!Object.values(this.stateTracker.state).find(state => state instanceof ErrorState);
+    }
+
+    /*
+     * actions
+     */
     // @return Promise.resolve(isSuccessful)
     validateAttributes(attributes, onlyDirtyAttributes = true) {
         if (typeof attributes === 'string') {
@@ -288,5 +309,9 @@ export default class Form {
                 return Promise.resolve(true);
             }
         });
+    }
+
+    invalidateRules() {
+        this._builtRules = null;
     }
 }

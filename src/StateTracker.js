@@ -101,7 +101,9 @@ export default class StateTracker {
         this.state[attr] = state;
     }
 
-    getAttributeState(attr) {
-        return this.state[attr];
+    getAttributeState(attribute) {
+        return this.state[attribute] || new PristineState({
+                attribute
+            });
     }
 }
