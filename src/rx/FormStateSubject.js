@@ -74,7 +74,7 @@ export default class FormStateSubject extends Subject {
         super.next(state);
     }
 
-    whenChanged(attributes) {
+    when(attributes) {
         this.changedFields = new Set([ ...this.changedFields, ...attributes ]).toArray();
 
         return this;

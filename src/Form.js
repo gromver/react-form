@@ -27,6 +27,8 @@ export default class Form {
         this.model = this.initialModel = model;
 
         this.dirtyAttributes = [];
+
+        this.prepareForm();
     }
 
     /**
@@ -66,6 +68,10 @@ export default class Form {
     prepareResultModel(model) {
         return model;
     }
+
+    // EXTEND THIS
+    // подготовка формы (подписка обработчиков на when... события)
+    prepareForm() { }
 
     /*
      * build rules
@@ -313,5 +319,32 @@ export default class Form {
 
     invalidateRules() {
         this._builtRules = null;
+    }
+
+    /*
+     * when... shortcuts
+     */
+    when(attributes, fn) {
+        return this.getObservable().when(attributes).subscribe(fn.bind(this));
+    }
+
+    whenValid(attributes, fn) {
+        return this.getObservable().when(attributes).whenValid(attributes).subscribe(fn.bind(this));
+    }
+
+    whenSuccess(attributes, fn) {
+        return this.getObservable().when(attributes).whenSuccess(attributes).subscribe(fn.bind(this));
+    }
+
+    whenWarning(attributes, fn) {
+        return this.getObservable().when(attributes).whenWarning(attributes).subscribe(fn.bind(this));
+    }
+
+    whenPending(attributes, fn) {
+        return this.getObservable().when(attributes).whenPending(attributes).subscribe(fn.bind(this));
+    }
+
+    whenError(attributes, fn) {
+        return this.getObservable().when(attributes).whenError(attributes).subscribe(fn.bind(this));
     }
 }
