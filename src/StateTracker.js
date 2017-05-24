@@ -12,7 +12,6 @@ export default class StateTracker {
 
     onPushState;
 
-    // todo uncachable validator?
     validateAttribute(model, attribute, validator) {
         const cached = this.cache[attribute];
         const value = utils.getModelAttribute(model, attribute);
