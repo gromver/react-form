@@ -20,25 +20,77 @@ export default class Validator {
         return false;
     }
 
-    __hash = undefined;
+    __hash;
+    __getTrueValue;
     __isCached = true;
 
+    // behavior modifiers
+    /**
+     * Enable/disable caching
+     * @param bool
+     * @returns {Validator}
+     */
     cache(bool) {
-        this.__hash = undefined;
         this.__isCached = bool;
 
         return this;
     }
 
+    duration(milliseconds) {
+        if (milliseconds) {
+            this.__getTrueValue = this.throttledTrueValue(milliseconds);
+        } else {
+            this.__getTrueValue = undefined;
+        }
+
+        return this;
+    }
+
+    // valueObject interface implementation
     equals(other) {
-        return this.__isCached ? this.hashCode() === other.hashCode() : false;
+        if (this.hashCode() === other.hashCode()) {
+            const isCached = this.__isCached && other.__isCached,
+                getTrueValue = this.__getTrueValue || other.__getTrueValue;
+
+            return isCached ? true : (getTrueValue ? getTrueValue() : false);
+        } else {
+            return false;
+        }
+    }
+
+    throttledTrueValue(duration) {
+        let isThrottled = false;
+
+        return () => {
+            if (!isThrottled) {
+                isThrottled = true;
+
+                setTimeout(() => {
+                    isThrottled = false;
+                }, duration);
+
+                return true;
+            } else {
+                return false;
+            }
+        };
     }
 
     hashCode() {
         if (this.__hash) {
             return this.__hash;
         } else {
-            const map = new Map(this);
+            const props = {};
+
+            const exclude = /^__/;
+
+            Object.entries(this).forEach(([k, v]) => {
+                if (!exclude.test(k)) {
+                    props[k] = v;
+                }
+            });
+
+            const map = new Map(props);
 
             return this.__hash = map.hashCode();
         }

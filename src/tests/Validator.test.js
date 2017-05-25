@@ -8,7 +8,7 @@ describe('Test Validator.js', () => {
         expect(validator).toBeInstanceOf(Validator);
     });
 
-    test('Immutable is() test', () => {
+    test('Immutable is() test', async () => {
         const validatorA = new Validator();
         let validatorB = new Validator();
 
@@ -16,6 +16,31 @@ describe('Test Validator.js', () => {
 
         expect(is(validatorA, validatorB)).toBe(true);
         expect(is(validatorA, validatorB.cache(false))).toBe(false);
+
+        validatorB.duration(250);
+
+        const fn = jest.fn();
+
+        await new Promise((resolve) => {
+            let steps = 6;
+
+            const tick = () => {
+                if (steps--) {
+                    setTimeout(() => {
+                        fn(is(validatorA, validatorB));
+
+                        tick();
+                    }, 50);
+                } else {
+                    resolve();
+                }
+            };
+
+            tick();
+        });
+
+        expect(fn.mock.calls).toEqual([[true], [false], [false], [false], [false], [true]]);
+
         expect(is(validatorA, validatorB.cache(true))).toBe(true);
 
         validatorB = new Validator();

@@ -1,7 +1,6 @@
-import { Form, StateTracker } from '..';
 import { SuccessState, PendingState, WarningState, ErrorState, PristineState } from '../states';
 import { MultiValidator, PresenceValidator, UrlValidator, CustomValidator } from '../validators';
-import { fromJS, Map } from 'immutable';
+import { Map } from 'immutable';
 import ValidatorsFormTest from './forms/ValidatorsTestForm';
 
 describe('Test Form.js', () => {
@@ -41,7 +40,7 @@ describe('Test Form.js', () => {
     });
 
     test('validateAttributes', () => {
-        const subscriber = jest.fn(state => console.log('ST', state));
+        const subscriber = jest.fn(/*state => console.log('ST', state)*/);
 
         const subscription = form.subscribe(subscriber);
 
