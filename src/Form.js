@@ -2,11 +2,14 @@ import { fromJS, Iterable } from 'immutable'
 import { Subject } from 'rxjs/Subject'
 import { SuccessState, WarningState, ErrorState } from './states'
 import StateTracker from './StateTracker'
+import Scenario from './Scenario'
 import { Validator, MultiValidator } from './validators'
 import FormStateSubject from './rx/FormStateSubject'
 import utils from './utils'
 
 export default class Form {
+    static SCENARIO_DEFAULT = 'default';
+
     model;
 
     initialModel;
@@ -17,19 +20,31 @@ export default class Form {
 
     observable = new Subject();
 
-    constructor(rawModel = {}) {
+    scenario;
+
+    // ключ сценарий => значение [ ...список аттрибутов валидируемых для этого сценария ]
+    // если по ключу нет сценария то все аттрибуты валидируются если нет спец условий (Scenario.in(...), Scenario.except(...))
+    scenarios = {};
+
+    constructor(rawModel = {}, scenario = Form.SCENARIO_DEFAULT) {
         const model = fromJS(this.prepareSourceModel(rawModel));
 
         this.onStateChange = this.onStateChange.bind(this);
 
-        this.stateTracker = new StateTracker(this.onStateChange);
-
         this.model = this.initialModel = model;
 
-        this.dirtyAttributes = [];
+        this.setScenario(scenario);
+
+        // this.stateTracker = new StateTracker(this.onStateChange);
+        //
+        // this.dirtyAttributes = [];
 
         this.prepareForm();
     }
+
+    /*
+     * Rx
+     */
 
     /**
      * Form state stream
@@ -46,6 +61,10 @@ export default class Form {
     onStateChange(state) {
         this.observable.next(state);
     }
+
+    /*
+     * Form logic methods
+     */
 
     // EXTEND THIS
     getRules() {
@@ -74,13 +93,35 @@ export default class Form {
     prepareForm() { }
 
     /*
+     * scenarios
+     */
+
+    setScenario(scenario) {
+        this.scenario = scenario;
+
+        this.stateTracker = new StateTracker(this.onStateChange);
+
+        this.dirtyAttributes = [];
+
+        this.__builtRules = undefined;
+    }
+
+    getScenario() {
+        return this.scenario;
+    }
+
+    isScenario(scenario) {
+        return this.scenario === scenario;
+    }
+
+    /*
      * build rules
      */
-    _builtRules;
+    __builtRules;
 
     getBuiltRules() {
-        if (this._builtRules) {
-            return this._builtRules;
+        if (this.__builtRules) {
+            return this.__builtRules;
         } else {
             const rules = this.buildRules();
 
@@ -91,15 +132,27 @@ export default class Form {
     }
 
     setBuiltRules(rules) {
-        this._builtRules = rules;
+        this.__builtRules = rules;
     }
 
     buildRules() {
         const rules = {};
 
+        const availableAttributes = this.scenarios[this.scenario];
+
         Object.entries(this.getRules()).forEach(([attribute, validator]) => {
+            if (availableAttributes && availableAttributes.indexOf(attribute) === -1) {
+                return;
+            }
+
             if (typeof validator === 'function') {
                 validator = validator.call(this);
+            } else if (validator instanceof Scenario) {
+                if (validator.apply === Scenario.APPLY_IN ? validator.scenarios.indexOf(this.scenario) !== -1 : validator.scenarios.indexOf(this.scenario) === -1) {
+                    validator = validator.validator;
+                } else {
+                    return; // skip
+                }
             } else if (Array.isArray(validator)) {
                 validator = new MultiValidator({
                     validators: this.normalizeValidatorsArray(validator)
@@ -131,8 +184,9 @@ export default class Form {
     }
 
     /*
-     * setters
+     * Attribute setters/getters
      */
+
     /**
      * Устанавливает значение поля модели, поддержка глубинной установки значение: this.setAttribute('foo.bar', value)
      * @param attribute
@@ -156,9 +210,6 @@ export default class Form {
         });
     }
 
-    /*
-     * getters
-     */
     getAttribute(attribute) {
         const { model } = this;
 
@@ -179,12 +230,24 @@ export default class Form {
         return Iterable.isIterable(value) ? value.toJS() : value;
     }
 
-    // состояние поля (PendingState, WarningState, SuccessState, ErrorState)
+    /*
+     * Attribute validation state getters
+     */
+
+    /**
+     * Returns current attribute state object or null
+     * @param attribute
+     * @returns {PendingState|WarningState|SuccessState|ErrorState|null}
+     */
     getValidationState(attribute) {
         const state = this.stateTracker.getAttributeState(attribute);
 
         return state && state.state || null;
     }
+
+    /*
+     * Attribute state helpers
+     */
 
     // сообщение ошибки
     getValidationError(attribute) {
@@ -220,14 +283,19 @@ export default class Form {
         return firstErrorAttribute ? this.stateTracker.getAttributeState(firstErrorAttribute) : undefined;
     }
 
+    /*
+     * Model getters
+     */
+
     // возвращает подготовленную модель, если useValidation = true, то возвращается промис с обещанием отдать модель при условии валидности формы
     getModel(useValidation = false) {
-        return !useValidation ? this.prepareResultModel(this.model.toJS()) : this.validateForm().then(() => this.prepareResultModel(this.model.toJS()));
+        return useValidation ? this.validateForm().then(() => this.prepareResultModel(this.model.toJS())) : this.prepareResultModel(this.model.toJS());
     }
 
     /*
      * form state
      */
+
     isValidForm() {
         
     }
@@ -257,6 +325,7 @@ export default class Form {
     /*
      * actions
      */
+
     // @return Promise.resolve(isSuccessful)
     validateAttributes(attributes, onlyDirtyAttributes = true) {
         if (typeof attributes === 'string') {
@@ -318,12 +387,13 @@ export default class Form {
     }
 
     invalidateRules() {
-        this._builtRules = null;
+        this.__builtRules = null;
     }
 
     /*
      * when... shortcuts
      */
+
     when(attributes, fn) {
         return this.getObservable().when(attributes).subscribe(fn.bind(this));
     }
