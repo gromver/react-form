@@ -1,6 +1,6 @@
 {
   "name": "rx-form",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Form component powered by RxJs",
   "main": "index.js",
   "scripts": {
