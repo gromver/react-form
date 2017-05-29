@@ -1,90 +1,238 @@
-import { SuccessState, PendingState, WarningState, ErrorState, PristineState } from '../states';
-import { MultiValidator, PresenceValidator, UrlValidator, CustomValidator } from '../validators';
-import { Map } from 'immutable';
-import ValidatorsFormTest from './forms/ValidatorsTestForm';
+import Form from '../Form';
+import TestModel from './models/TestModel';
 
 describe('Test Form.js', () => {
-    const data = { presence: 'bar' };
+  const data = { };
 
-    const form = new ValidatorsFormTest(data);
+  test('construct()', () => {
+    const model = new TestModel(data);
 
-    test('construct()', () => {
-        expect(form.model).toBeInstanceOf(Map);
+    const form = new Form(model);
 
-        expect(form.model.toJS()).toMatchObject({
-            ...data,
-            url: ''
-        });
+    expect(form).toBeInstanceOf(Form);
+  });
+
+  test('set() & get()', () => {
+    const model = new TestModel(data);
+
+    const form = new Form(model);
+
+    form.set('foo', 'bar');
+
+    expect(form.get('foo')).toBe('bar');
+  });
+
+  test('setAttribute() and getAttribute()', () => {
+    const model = new TestModel(data);
+
+    const form = new Form(model);
+
+    form.setAttribute('name', 'John');
+
+    expect(form.getAttribute('name')).toEqual('John');
+
+    expect(form.getModel().get('name')).toEqual('John');
+
+    form.setAttribute('nested.value', 123);
+
+    expect(form.getModel().get('nested')).toEqual({
+      value: 123,
+    });
+  });
+
+
+  test('setAttributes() and getAttributes()', () => {
+    const model = new TestModel(data);
+
+    const form = new Form(model);
+
+    form.setAttributes({
+      name: 'Peter',
+      password: 123,
     });
 
-    test('buildRules', () => {
-        expect(form.buildRules()).toEqual(expect.objectContaining({
-            presence: expect.any(PresenceValidator),
-            url: expect.any(UrlValidator),
-            multi: expect.any(MultiValidator)
-        }));
+    expect(form.getAttributes()).toEqual({
+      name: 'Peter',
+      password: 123,
     });
 
-    test('setAttributes', () => {
-        form.setAttributes({
-            presence: 'bar',
-            url: 'http://yandex.ru',
-            multi: 'http://google.com'
-        });
+    form.setAttribute('nested.value', 123);
 
-        expect(form.model.toJS()).toMatchObject({
-            presence: 'bar',
-            url: 'http://yandex.ru',
-            multi: 'http://google.com'
-        });
+    expect(form.getAttributes()).toEqual({
+      name: 'Peter',
+      nested: {
+        value: 123,
+      },
+      password: 123,
+    });
+  });
+
+  test('isFormDirty', () => {
+    const model = new TestModel(data);
+
+    let form = new Form(model);
+
+    expect(form.isFormDirty()).toBe(false);
+
+    form.setAttribute('name', '');
+
+    expect(form.isFormDirty()).toBe(true);
+
+    form = new Form(model);
+
+    form.setAttributes({
+      name: '',
+      password: '',
     });
 
-    test('validateAttributes', () => {
-        const subscriber = jest.fn(/*state => console.log('ST', state)*/);
+    expect(form.isFormDirty()).toBe(true);
+  });
 
-        const subscription = form.subscribe(subscriber);
+  test('isFormValid()', async () => {
+    const model = new TestModel(data);
 
-        return form.validateAttributes(['presence', 'url', 'multi']).catch(() => {
-            // expect(subscriber).toHaveBeenCalledWith(expect.any(SuccessState));
-            expect(subscriber.mock.calls[0][0]).toEqual(expect.any(SuccessState));
-            expect(subscriber.mock.calls[1][0]).toEqual(expect.any(PendingState));
-            expect(subscriber.mock.calls[2][0]).toEqual(expect.any(ErrorState));
+    const form = new Form(model);
 
-            subscription.unsubscribe();
-        });
+    expect(form.isFormValid()).toBe(true);
+
+    form.setAttribute('name', 'John');
+
+    let result = await form.isFormValid();
+
+    expect(result).toBe(true);
+
+    await form.validate();
+
+    result = await form.isFormValid();
+
+    expect(result).toBe(false);
+
+    form.setAttribute('password', '123qwe');
+
+    await form.validate();
+
+    result = await form.isFormValid();
+
+    expect(result).toBe(true);
+  });
+
+  test('isFormChanged()', () => {
+    const model = new TestModel();
+
+    const form = new Form(model);
+
+    expect(form.isFormChanged()).toBe(false);
+
+    form.setAttribute('name', '');
+
+    expect(form.isFormChanged()).toBe(false);
+
+    form.setAttribute('name', 'John');
+
+    expect(form.isFormChanged()).toBe(true);
+
+    form.setAttribute('name', '');
+
+    expect(form.isFormChanged()).toBe(false);
+  });
+
+  test('isAttributeDirty()', () => {
+    const model = new TestModel();
+
+    const form = new Form(model);
+
+    expect(form.isAttributeDirty('name')).toBe(false);
+
+    form.setAttribute('name', '');
+
+    expect(form.isAttributeDirty('name')).toBe(true);
+  });
+
+  test('isAttributeChanged()', () => {
+    const model = new TestModel();
+
+    const form = new Form(model);
+
+    expect(form.isAttributeChanged('name')).toBe(false);
+
+    form.setAttribute('name', '');
+
+    expect(form.isAttributeChanged('name')).toBe(false);
+
+    form.setAttribute('name', 'abc');
+
+    expect(form.isAttributeChanged('name')).toBe(true);
+  });
+
+  test('validate()', async () => {
+    const model = new TestModel();
+
+    const form = new Form(model);
+
+    let result = await form.validate();
+
+    expect(result).toBe(false);
+
+    form.setAttributes({
+      name: 'John',
+      password: '123',
     });
 
-});
+    result = await form.validate();
 
-describe('getFirstError life cycle', () => {
-    const form = new ValidatorsFormTest();
+    expect(result).toBe(false);
 
-    form.setAttribute('url', 'not valid');
+    form.setAttribute('password', '123qwe');
 
-    test('check url', async () => {
-        await form.validateAttributes('url').catch(() => Promise.resolve());
+    result = await form.validate();
 
-        const error = form.getFirstError();
+    expect(result).toBe(true);
+  });
 
-        expect(error).toBeInstanceOf(ErrorState);
-        expect(error.attribute).toBe('url');
+  test('validateAttributes()', async () => {
+    const validate = jest.fn(() => Promise.resolve(true));
+
+    const model = new TestModel();
+    model.validate = validate;
+
+    const form = new Form(model);
+
+    form.setAttributes({
+      name: 'John',
     });
 
-    test('check order', async () => {
-        form.setAttribute('multi', 'not valid');
+    await form.validateAttributes('name');
 
-        await form.validateAttributes('multi').catch(() => Promise.resolve());
+    await form.validateAttributes(['name', 'password']);
 
-        let error = form.getFirstError();
+    form.setAttribute('password', '123qwe');
 
-        expect(error).toBeInstanceOf(ErrorState);
-        expect(error.attribute).toBe('url');
+    await form.validateAttributes(['name', 'password']);
 
-        await form.validateForm().catch(() => Promise.resolve());
+    expect(validate.mock.calls).toEqual([[['name']], [['name']], [['name', 'password']]]);
+  });
 
-        error = form.getFirstError();
+  test('when()', () => {
+    let observer = jest.fn();
 
-        expect(error).toBeInstanceOf(ErrorState);
-        expect(error.attribute).toBe('presence');
-    });
+    const model = new TestModel();
+
+    const form = new Form(model);
+
+    form.when(['foo']).subscribe(observer);
+    form.set('foo', '');
+    form.set('bar', '');
+    form.set('foo', '');
+
+    expect(observer.mock.calls).toEqual([['foo'], ['foo']]);
+
+    observer = jest.fn();
+
+    form.when(['foo', 'bar']).subscribe(observer);
+    form.set('foo', '');
+    form.set('bar', '');
+    form.set('foo', '');
+
+    expect(observer.mock.calls).toEqual([['foo'], ['bar'], ['foo']]);
+  });
 });

@@ -1,7 +1,4 @@
 import Form from './Form';
-import StateTracker from './StateTracker';
 
-export {
-    Form,
-    StateTracker
-}
+// eslint-disable-next-line import/prefer-default-export
+export { Form };
