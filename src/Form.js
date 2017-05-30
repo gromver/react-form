@@ -90,7 +90,13 @@ export default class Form {
   set(name, value) {
     this.properties = this.properties.set(name, value);
 
-    this.observable.next(name);
+    this.observable.next([name]);
+  }
+
+  setProperties(values) {
+    this.properties = this.properties.merge(values);
+
+    this.observable.next(Object.keys(values));
   }
 
   /**
@@ -208,9 +214,9 @@ export default class Form {
 
     return Observable.create((observer) => {
       input.subscribe({
-        next: (property) => {
-          if (properties.indexOf(property) !== -1) {
-            observer.next(property);
+        next: (changedProps) => {
+          if (properties.find(p => changedProps.indexOf(p) !== -1)) {
+            observer.next(changedProps);
           }
         },
         error: observer.error,
