@@ -209,6 +209,63 @@ export default class Form {
     return Promise.resolve(true);
   }
 
+  /**
+   * Returns current attribute state object or null
+   * @param attribute
+   * @returns {PendingState|WarningState|SuccessState|ErrorState|null}
+   */
+  getValidationState(attribute) {
+    return this.getModel().getValidationState(attribute);
+  }
+
+  /**
+   * Get attribute's validation error message is exist
+   * @param attribute
+   * @returns {Message|string|null}
+   */
+  getValidationError(attribute) {
+    return this.getModel().getValidationError(attribute);
+  }
+
+  /**
+   *
+   * @returns {Array.<SuccessState|WarningState|ErrorState|PendingState>}
+   */
+  getValidationErrors() {
+    return this.getModel().getValidationErrors();
+  }
+
+  // сообщение вне зависимости от типа состояния
+  /**
+   * Get attributes's any validation message
+   * @param attribute
+   * @returns {Message|string|null}
+   */
+  getValidationMessage(attribute) {
+    return this.getModel().getValidationMessage(attribute);
+  }
+
+  /**
+   * Get attributes's warning validation message
+   * @param attribute
+   * @returns {Message|string|null}
+   */
+  getValidationWarning(attribute) {
+    return this.getModel().getValidationWarning(attribute);
+  }
+
+  /**
+   * Get first error state is exists
+   * @returns {ErrorState|undefined}
+   */
+  getFirstError() {
+    return this.getModel().getFirstError();
+  }
+
+  hasErrors() {
+    return this.getModel().hasErrors();
+  }
+
   when(properties) {
     const input = this.getObservable();
 
