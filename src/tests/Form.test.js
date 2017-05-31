@@ -41,12 +41,19 @@ describe('Test Form.js', () => {
     const model = new TestModel(data);
 
     const form = new Form(model);
+    const fn = jest.fn();
+
+    form.getModel().getObservable().subscribe(fn);
 
     form.setAttribute('name', 'John');
 
     expect(form.getAttribute('name')).toEqual('John');
 
     expect(form.getModel().get('name')).toEqual('John');
+
+    form.setAttribute('name', 'Paul', () => {});
+
+    expect(fn).toHaveBeenCalledTimes(1);
 
     form.setAttribute('nested.value', 123);
 

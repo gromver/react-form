@@ -37,7 +37,7 @@
   },
   "homepage": "https://github.com/gromver/rx-form#readme",
   "dependencies": {
-    "rx-model": "^1.0.2",
+    "rx-model": "^1.0.3",
     "rxjs": "^5.3.0"
   },
   "devDependencies": {

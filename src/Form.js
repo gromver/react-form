@@ -120,11 +120,18 @@ export default class Form {
    * Set model attribute
    * @param attribute
    * @param value
+   * @param cb
    */
-  setAttribute(attribute, value) {
+  setAttribute(attribute, value, cb) {
     this.getModel().set(attribute, value);
 
     this.markAsDirty(attribute);
+
+    if (cb) {
+      cb.call(this);
+    } else {
+      this.getModel().markAsPristine([attribute]);
+    }
   }
 
   /**
