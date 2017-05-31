@@ -1,5 +1,4 @@
 import { Model } from 'rx-model';
-import { Iterable, Map } from 'immutable';
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
 
@@ -12,9 +11,9 @@ export default class Form {
   model;
 
   /**
-   * @type {Immutable.Map}
+   * @type {{}}
    */
-  properties;
+  state = {};
 
   /**
    * @type {Array<string>}
@@ -32,7 +31,6 @@ export default class Form {
       throw new Error('Form.constructor - model must be set and be an instance of Model');
     }
 
-    this.properties = new Map();
     this.model = model;
 
     this.prepareForm();
@@ -88,15 +86,12 @@ export default class Form {
    * @param value
    */
   set(name, value) {
-    this.properties = this.properties.set(name, value);
+    this.state = {
+      ...this.state,
+      [name]: value,
+    };
 
-    this.observable.next([name]);
-  }
-
-  setProperties(values) {
-    this.properties = this.properties.merge(values);
-
-    this.observable.next(Object.keys(values));
+    this.observable.next({ [name]: value });
   }
 
   /**
@@ -105,9 +100,20 @@ export default class Form {
    * @returns {*}
    */
   get(name) {
-    const value = this.properties.get(name);
+    return this.state[name];
+  }
 
-    return Iterable.isIterable(value) ? value.toJS() : value;
+  /**
+   * Set state values
+   * @param values
+   */
+  setState(values) {
+    this.state = {
+      ...this.state,
+      ...values,
+    };
+
+    this.observable.next(values);
   }
 
   /**
@@ -271,9 +277,9 @@ export default class Form {
 
     return Observable.create((observer) => {
       input.subscribe({
-        next: (changedProps) => {
-          if (properties.find(p => changedProps.indexOf(p) !== -1)) {
-            observer.next(changedProps);
+        next: (changes) => {
+          if (properties.find(p => Object.hasOwnProperty.call(changes, p))) {
+            observer.next(changes);
           }
         },
         error: observer.error,

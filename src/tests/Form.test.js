@@ -22,13 +22,13 @@ describe('Test Form.js', () => {
     expect(form.get('foo')).toBe('bar');
   });
 
-  test('setProperties()', () => {
+  test('setState()', () => {
     const model = new TestModel(data);
 
     const form = new Form(model);
 
     form.set('a', 'a');
-    form.setProperties({
+    form.setState({
       a: 'A',
       b: 'B',
     });
@@ -239,7 +239,7 @@ describe('Test Form.js', () => {
     form.set('bar', '');
     form.set('foo', '');
 
-    expect(observer.mock.calls).toEqual([[['foo']], [['foo']]]);
+    expect(observer.mock.calls).toEqual([[{ foo: '' }], [{ foo: '' }]]);
 
     observer = jest.fn();
 
@@ -247,17 +247,17 @@ describe('Test Form.js', () => {
     form.set('foo', '');
     form.set('bar', '');
     form.set('foo', '');
-    form.setProperties({
+    form.setState({
       a: '',
       b: '',
     });
-    form.setProperties({
+    form.setState({
       foo: '',
       bar: '',
       a: '',
       b: '',
     });
 
-    expect(observer.mock.calls).toEqual([[['foo']], [['bar']], [['foo']], [['foo', 'bar', 'a', 'b']]]);
+    expect(observer.mock.calls).toEqual([[{ foo: '' }], [{ bar: '' }], [{ foo: '' }], [{ foo: '', bar: '', a: '', b: '' }]]);
   });
 });
