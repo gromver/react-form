@@ -241,6 +241,10 @@ export default class Form {
     return Promise.resolve(true);
   }
 
+  invalidateValidators() {
+    return this.getModel().invalidateValidators();
+  }
+
   /**
    * Returns current attribute state object or null
    * @param attribute
