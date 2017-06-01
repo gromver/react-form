@@ -60,16 +60,24 @@ export default class Form {
 
   /**
    * Set model scenario
-   * @param scenario
+   * @param scenario {Array<string>|string}
    */
   setScenario(scenario) {
     this.getModel().setScenario(scenario);
   }
 
+  /**
+   * Get Model scenarios
+   * @returns {Array<string>}
+   */
   getScenario() {
     return this.getModel().getScenario();
   }
 
+  /**
+   * @param scenario
+   * @returns {boolean}
+   */
   isScenario(scenario) {
     return this.getModel().isScenario(scenario);
   }
@@ -199,6 +207,10 @@ export default class Form {
 
   isAttributeChanged(attribute) {
     return this.getModel().isAttributeChanged(attribute);
+  }
+
+  isAttributeEditable(attribute) {
+    return this.getModel().isAttributeEditable(attribute);
   }
 
   validate() {
