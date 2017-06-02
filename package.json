@@ -37,6 +37,7 @@
   },
   "homepage": "https://github.com/gromver/rx-form#readme",
   "dependencies": {
+    "immutable": "^3.8.1",
     "rx-model": "^1.0.8"
   },
   "peerDependencies": {

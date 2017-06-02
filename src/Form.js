@@ -1,7 +1,12 @@
 import { Model } from 'rx-model';
 import { Subject } from 'rxjs/Subject';
 import { Observable } from 'rxjs/Observable';
-
+import FormStateSubject from './rx/FormStateSubject';
+/**
+ * TODO: разработать свой observable с методами:
+ * whenAttributeChanged, whenAttributeValid, whenAttribute...
+ * whenStateChanged, whenSubscribed,
+ * */
 export default class Form {
   static SCENARIO_DEFAULT = 'default';
 
@@ -38,10 +43,10 @@ export default class Form {
 
   /**
    * Form state stream
-   * @returns {Subject}
+   * @returns {FormStateSubject}
    */
   getObservable() {
-    return this.observable;
+    return new FormStateSubject(this);
   }
 
   /**
@@ -302,8 +307,13 @@ export default class Form {
     return this.getModel().hasErrors();
   }
 
+  /**
+   * @deprecated use getObservable()
+   * @param properties
+   * @returns {*}
+   */
   when(properties) {
-    const input = this.getObservable();
+    const input = this.observable;
 
     return Observable.create((observer) => {
       input.subscribe({
