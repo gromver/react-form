@@ -51,9 +51,9 @@ describe('Test Form.js', () => {
 
     expect(form.getModel().get('name')).toEqual('John');
 
-    form.setAttribute('name', 'Paul', () => {});
+    form.setAttribute('name', 'Paul');
 
-    expect(fn).toHaveBeenCalledTimes(1);
+    expect(fn).toHaveBeenCalledTimes(2);
 
     form.setAttribute('nested.value', 123);
 
@@ -233,40 +233,6 @@ describe('Test Form.js', () => {
 
     expect(validate.mock.calls).toEqual([[['name']], [['name']], [['name', 'password']]]);
   });
-
-  test('when()', () => {
-    let observer = jest.fn();
-
-    const model = new TestModel();
-
-    const form = new Form(model);
-
-    form.when(['foo']).subscribe(observer);
-    form.set('foo', '');
-    form.set('bar', '');
-    form.set('foo', '');
-
-    expect(observer.mock.calls).toEqual([[{ foo: '' }], [{ foo: '' }]]);
-
-    observer = jest.fn();
-
-    form.when(['foo', 'bar']).subscribe(observer);
-    form.set('foo', '');
-    form.set('bar', '');
-    form.set('foo', '');
-    form.setState({
-      a: '',
-      b: '',
-    });
-    form.setState({
-      foo: '',
-      bar: '',
-      a: '',
-      b: '',
-    });
-
-    expect(observer.mock.calls).toEqual([[{ foo: '' }], [{ bar: '' }], [{ foo: '' }], [{ foo: '', bar: '', a: '', b: '' }]]);
-  });
 });
 
 describe('FormStateSubject', async () => {
@@ -281,7 +247,6 @@ describe('FormStateSubject', async () => {
     form.setState({ a: '' });
     form.setAttribute('name', '');
     await form.validate();
-
     expect(observer).toHaveBeenCalledTimes(0);
 
     observable.whenFormChanged();
@@ -298,6 +263,7 @@ describe('FormStateSubject', async () => {
     form.setState({ a: '' });
     form.setAttribute('name', '');
     await form.validate();
+
     expect(observer).toHaveBeenCalledTimes(4);
   });
 

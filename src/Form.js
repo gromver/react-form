@@ -1,12 +1,7 @@
 import { Model } from 'rx-model';
 import { Subject } from 'rxjs/Subject';
-import { Observable } from 'rxjs/Observable';
 import FormStateSubject from './rx/FormStateSubject';
-/**
- * TODO: разработать свой observable с методами:
- * whenAttributeChanged, whenAttributeValid, whenAttribute...
- * whenStateChanged, whenSubscribed,
- * */
+
 export default class Form {
   static SCENARIO_DEFAULT = 'default';
 
@@ -133,18 +128,11 @@ export default class Form {
    * Set model attribute
    * @param attribute
    * @param value
-   * @param cb
    */
-  setAttribute(attribute, value, cb) {
+  setAttribute(attribute, value) {
     this.getModel().set(attribute, value);
 
     this.markAsDirty(attribute);
-
-    if (cb) {
-      cb.call(this);
-    } else {
-      this.getModel().markAsPristine([attribute]);
-    }
   }
 
   /**
@@ -168,20 +156,13 @@ export default class Form {
   /**
    * Set model attributes
    * @param values
-   * @param cb
    */
-  setAttributes(values, cb) {
+  setAttributes(values) {
     Object.entries(values).forEach(([k, v]) => {
       this.getModel().set(k, v);
 
       this.markAsDirty(k);
     });
-
-    if (cb) {
-      cb.call(this);
-    } else {
-      this.getModel().markAsPristine(Object.keys(values));
-    }
   }
 
   /**
@@ -251,9 +232,18 @@ export default class Form {
   }
 
   /**
+   * Get attribute's validation state object
+   * @param attribute
+   * @returns {PendingState|WarningState|SuccessState|ErrorState|PristineState}
+   */
+  getAttributeState(attribute) {
+    return this.getModel().getAttributeState(attribute);
+  }
+
+  /**
    * Returns current attribute state object or null
    * @param attribute
-   * @returns {PendingState|WarningState|SuccessState|ErrorState|null}
+   * @returns {string}
    */
   getValidationState(attribute) {
     return this.getModel().getValidationState(attribute);
@@ -305,26 +295,5 @@ export default class Form {
 
   hasErrors() {
     return this.getModel().hasErrors();
-  }
-
-  /**
-   * @deprecated use getObservable()
-   * @param properties
-   * @returns {*}
-   */
-  when(properties) {
-    const input = this.observable;
-
-    return Observable.create((observer) => {
-      input.subscribe({
-        next: (changes) => {
-          if (properties.find(p => Object.hasOwnProperty.call(changes, p))) {
-            observer.next(changes);
-          }
-        },
-        error: observer.error,
-        complete: observer.complete,
-      });
-    });
   }
 }
