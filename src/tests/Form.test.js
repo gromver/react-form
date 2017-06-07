@@ -211,6 +211,19 @@ describe('Test Form.js', () => {
     expect(result).toBe(true);
   });
 
+  test('validate and dirtyAttributes', () => {
+    const model = new TestModel();
+
+    const form = new Form(model);
+
+    form.setAttribute('name', '');
+    expect(form.dirtyAttributes).toEqual(['name']);
+
+    form.validate();
+
+    expect(form.dirtyAttributes).toEqual(['name', 'password']);
+  });
+
   test('validateAttributes()', async () => {
     const validate = jest.fn(() => Promise.resolve(true));
 
