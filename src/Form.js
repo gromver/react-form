@@ -216,14 +216,24 @@ export default class Form {
 
     if (onlyDirtyAttributes) {
       attrsToCheck = attrsToCheck.filter(i => this.isAttributeDirty(i));
+    } else {
+      this.dirtyAttributes = [...new Set([...this.dirtyAttributes, ...attrsToCheck])];
     }
-
-    attrsToCheck = [...new Set([...this.dirtyAttributes, ...attrsToCheck])];
-
-    this.dirtyAttributes = [...attrsToCheck];
 
     if (attrsToCheck.length) {
       return this.getModel().validate(attrsToCheck);
+    }
+
+    return Promise.resolve(true);
+  }
+
+  /**
+   * Validate Form's dirty attributes
+   * @returns {Promise.<boolean>}
+   */
+  validateDirtyAttributes() {
+    if (this.dirtyAttributes.length) {
+      return this.getModel().validate(this.dirtyAttributes);
     }
 
     return Promise.resolve(true);
