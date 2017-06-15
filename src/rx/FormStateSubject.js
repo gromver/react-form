@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs/Subject';
 import { Set } from 'immutable';
+import FormMutationState from '../states/MutationState';
 
 export default class FormStateSubject extends Subject {
   isRunOnSubscribe = false;
@@ -8,8 +9,11 @@ export default class FormStateSubject extends Subject {
   form;
   formSubscription;
 
-  modelObservable;
-  modelSubscription;
+  validationObservable;
+  validationSubscription;
+
+  mutationObservable;
+  mutationSubscription;
 
   constructor(form) {
     super();
@@ -22,8 +26,12 @@ export default class FormStateSubject extends Subject {
 
     this.formSubscription.unsubscribe();
 
-    if (this.modelSubscription) {
-      this.modelSubscription.unsubscribe();
+    if (this.validationSubscription) {
+      this.validationSubscription.unsubscribe();
+    }
+
+    if (this.mutationSubscription) {
+      this.mutationSubscription.unsubscribe();
     }
   }
 
@@ -35,14 +43,16 @@ export default class FormStateSubject extends Subject {
     }
   }
 
-  next(changes) {
-    if (this.changedProperties.length) {
-      if (!this.changedProperties.filter(p => Object.hasOwnProperty.call(changes, p)).length) {
+  next(state) {
+    if (this.changedProperties.length && state instanceof FormMutationState) {
+      if (
+        !this.changedProperties.filter(p => Object.hasOwnProperty.call(state.mutations, p)).length
+      ) {
         return;
       }
     }
 
-    super.next({ form: changes });
+    super.next(state);  // Form.MutationState
   }
 
   whenSubscribed() {
@@ -51,70 +61,98 @@ export default class FormStateSubject extends Subject {
     return this;
   }
 
-  whenFormChanged() {
+  subscribeToForm() {
     if (!this.formSubscription) {
       this.formSubscription = this.form.observable.subscribe(this);
     }
-
-    return this;
   }
 
-  whenStateChanged(properties) {
-    this.changedProperties = new Set([...this.changedProperties, ...properties]).toArray();
+  getValidationObservable() {
+    if (!this.validationObservable) {
+      this.validationObservable = this.form.getModel().getValidationObservable();
 
-    return this.whenFormChanged();
-  }
-
-  getModelObservable() {
-    if (!this.modelObservable) {
-      this.modelObservable = this.form.getModel().getObservable();
-
-      this.modelSubscription = this.modelObservable.subscribe((state) => {
-        super.next({ model: state });
+      this.validationSubscription = this.validationObservable.subscribe((state) => {
+        super.next(state);  // SuccessState, WarningState, ErrorState, PendingState
       });
     }
 
-    return this.modelObservable;
+    return this.validationObservable;
   }
 
-  whenModelChanged() {
-    this.getModelObservable();
+  getMutationObservable() {
+    if (!this.mutationObservable) {
+      this.mutationObservable = this.form.getModel().getMutationObservable();
+
+      this.mutationSubscription = this.mutationObservable.subscribe((state) => {
+        super.next(state);  // Model.MutationState
+      });
+    }
+
+    return this.mutationObservable;
+  }
+
+
+  /**
+   * When form changed
+   * @param {Array<string>} properties - a list of filtered by properties
+   * @returns {*}
+   */
+  whenForm(properties = []) {
+    this.subscribeToForm();
+
+    this.changedProperties = new Set([...this.changedProperties, ...properties]).toArray();
 
     return this;
   }
 
-  whenAttributesChanged(attributes) {
-    this.getModelObservable().when(attributes);
+  /**
+   * When model changed
+   * @param {Array<string>} attributes - a list of filtered by attributes
+   * @returns {*}
+   */
+  whenModel(attributes = []) {
+    this.getMutationObservable().when(attributes);
 
     return this;
   }
 
-  whenAttributesValid(attributes) {
-    this.getModelObservable().when(attributes).whenValid(attributes);
+  /**
+   * When validation changed
+   * @param {Array<string>} attributes - a list of filtered by attributes
+   * @returns {*}
+   */
+  whenValidation(attributes = []) {
+    this.getValidationObservable().when(attributes);
 
     return this;
   }
 
-  whenAttributesSuccess(attributes) {
-    this.getModelObservable().when(attributes).whenSuccess(attributes);
+  whenValidationValid(attributes) {
+    this.getValidationObservable().when(attributes).whenValid(attributes);
 
     return this;
   }
 
-  whenAttributesWarning(attributes) {
-    this.getModelObservable().when(attributes).whenWarning(attributes);
+  whenValidationSuccess(attributes) {
+    this.getValidationObservable().when(attributes).whenSuccess(attributes);
 
     return this;
   }
 
-  whenAttributesPending(attributes) {
-    this.getModelObservable().when(attributes).whenPending(attributes);
+  whenValidationWarning(attributes) {
+    this.getValidationObservable().when(attributes).whenWarning(attributes);
 
     return this;
   }
 
-  whenAttributesError(attributes) {
-    this.getModelObservable().when(attributes).whenError(attributes);
+  whenValidationPending(attributes) {
+    this.getValidationObservable().when(attributes).whenPending(attributes);
+
+    return this;
+  }
+
+  whenValidationError(attributes) {
+    this.getValidationObservable().when(attributes).whenError(attributes);
 
     return this;
   }

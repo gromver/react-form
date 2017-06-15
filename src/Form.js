@@ -1,6 +1,7 @@
 import { Model } from 'rx-model';
 import { Subject } from 'rxjs/Subject';
 import FormStateSubject from './rx/FormStateSubject';
+import MutationState from './states/MutationState';
 
 export default class Form {
   static SCENARIO_DEFAULT = 'default';
@@ -99,7 +100,7 @@ export default class Form {
       [name]: value,
     };
 
-    this.observable.next({ [name]: value });
+    this.observable.next(new MutationState({ [name]: value }));
   }
 
   /**
@@ -121,7 +122,7 @@ export default class Form {
       ...values,
     };
 
-    this.observable.next(values);
+    this.observable.next(new MutationState(values));
   }
 
   /**
@@ -133,6 +134,18 @@ export default class Form {
     this.getModel().set(attribute, value);
 
     this.markAsDirty(attribute);
+  }
+
+  /**
+   * Set model attribute and validate it
+   * @param attribute
+   * @param value
+   * @returns {Promise.<boolean>}
+   */
+  setAttributeAndValidate(attribute, value) {
+    this.setAttribute(attribute, value);
+
+    return this.validateAttributes([attribute]);
   }
 
   /**
@@ -163,6 +176,17 @@ export default class Form {
 
       this.markAsDirty(k);
     });
+  }
+
+  /**
+   * Set model attributes and validate them
+   * @param values
+   * @returns {Promise.<boolean>}
+   */
+  setAttributesAndValidate(values) {
+    this.setAttributes(values);
+
+    return this.validateAttributes(values);
   }
 
   /**
@@ -278,7 +302,6 @@ export default class Form {
     return this.getModel().getValidationErrors();
   }
 
-  // сообщение вне зависимости от типа состояния
   /**
    * Get attributes's any validation message
    * @param attribute

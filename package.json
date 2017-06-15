@@ -1,6 +1,6 @@
 {
   "name": "rx-form",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Form component powered by RxJs",
   "main": "index.js",
   "scripts": {
@@ -38,7 +38,7 @@
   "homepage": "https://github.com/gromver/rx-form#readme",
   "dependencies": {
     "immutable": "^3.8.1",
-    "rx-model": "^1.1.1",
+    "rx-model": "^1.2.0",
     "rxjs": "^5.3.0"
   },
   "devDependencies": {

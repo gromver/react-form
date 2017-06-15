@@ -1,3 +1,4 @@
+import { ErrorState, SuccessState } from 'rx-model/states';
 import Form from '../Form';
 import TestModel from './models/TestModel';
 
@@ -43,7 +44,7 @@ describe('Test Form.js', () => {
     const form = new Form(model);
     const fn = jest.fn();
 
-    form.getModel().getObservable().subscribe(fn);
+    form.getModel().getMutationObservable().subscribe(fn);
 
     form.setAttribute('name', 'John');
 
@@ -262,7 +263,7 @@ describe('FormStateSubject', async () => {
     await form.validate();
     expect(observer).toHaveBeenCalledTimes(0);
 
-    observable.whenFormChanged();
+    observable.whenForm();
     form.setState({ a: '' });
     form.setAttribute('name', '');
     await form.validate();
@@ -271,7 +272,17 @@ describe('FormStateSubject', async () => {
 
     observer.mockClear();
 
-    observable.whenModelChanged();
+    observable.whenModel();
+    form.setScenario(form.getScenario());
+    form.setState({ a: '' });
+    form.setAttribute('name', '');
+    await form.validate();
+
+    expect(observer).toHaveBeenCalledTimes(2);
+
+    observer.mockClear();
+
+    observable.whenValidation();
     form.setScenario(form.getScenario());
     form.setState({ a: '' });
     form.setAttribute('name', '');
@@ -280,12 +291,12 @@ describe('FormStateSubject', async () => {
     expect(observer).toHaveBeenCalledTimes(4);
   });
 
-  test('whenStateChanged', async () => {
+  test('whenForm with restrictions', async () => {
     const model = new TestModel();
     const form = new Form(model);
     const observer = jest.fn();
 
-    const observable = form.getObservable().whenStateChanged(['a']);
+    const observable = form.getObservable().whenForm(['a']);
     observable.subscribe(observer);
 
     form.setState({ a: '' });
@@ -309,31 +320,32 @@ describe('FormStateSubject', async () => {
     expect(observer).toHaveBeenCalledTimes(1);
   });
 
-  test('whenAttributesChanged', async () => {
+  test('whenValidation', async () => {
     const model = new TestModel();
     const form = new Form(model);
     const observer = jest.fn();
 
     const observable = form.getObservable();
-    observable.whenAttributesChanged(['name']).subscribe(observer);
+    observable.whenValidation(['name']).subscribe(observer);
     form.setAttribute('password', '');
 
     expect(observer).toHaveBeenCalledTimes(0);
 
     form.setAttribute('name', '');
+    expect(observer).toHaveBeenCalledTimes(0);
+
+    await form.validate();
     expect(observer).toHaveBeenCalledTimes(1);
-    expect(observer).toBeCalledWith(expect.objectContaining({
-      model: expect.any(Object),
-    }));
+    expect(observer).toBeCalledWith(expect.any(ErrorState));
   });
 
-  test('whenAttributesValid', async () => {
+  test('whenValidationValid', async () => {
     const model = new TestModel();
     const form = new Form(model);
     const observer = jest.fn();
 
     const observable = form.getObservable();
-    observable.whenAttributesValid(['name']).subscribe(observer);
+    observable.whenValidationValid(['name']).subscribe(observer);
     form.setAttribute('name', '');
     form.setAttribute('password', '');
     await form.validate();
@@ -343,8 +355,6 @@ describe('FormStateSubject', async () => {
     form.setAttribute('password', '123qwe');
     await form.validate();
     expect(observer).toHaveBeenCalledTimes(1);
-    expect(observer).toBeCalledWith(expect.objectContaining({
-      model: expect.any(Object),
-    }));
+    expect(observer).toBeCalledWith(expect.any(SuccessState));
   });
 });
