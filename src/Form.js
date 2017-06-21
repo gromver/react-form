@@ -33,8 +33,6 @@ export default class Form {
     }
 
     this.model = model;
-
-    this.prepareForm();
   }
 
   /**
@@ -44,12 +42,6 @@ export default class Form {
   getObservable() {
     return new FormStateSubject(this);
   }
-
-  /**
-   * EXTEND THIS
-   * подготовка формы (подписка обработчиков на when... события)
-   */
-  prepareForm() { }
 
   /**
    * Get model object
