@@ -1,5 +1,5 @@
 import { Model } from 'rx-model';
-import { PresenceValidator, StringValidator } from 'rx-model/validators';
+import { PresenceValidator, StringValidator, Validator } from 'rx-model/validators';
 
 export default class TestModel extends Model {
 // eslint-disable-next-line class-methods-use-this
@@ -21,6 +21,7 @@ export default class TestModel extends Model {
           minLength: 6,
         }),
       ],
+      'nested.value': new Validator(),
     };
   }
 }

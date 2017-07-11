@@ -1,4 +1,5 @@
 import { Model } from 'rx-model';
+import { UnvalidatedState } from 'rx-model/states';
 import { Subject } from 'rxjs/Subject';
 import FormStateSubject from './rx/FormStateSubject';
 import MutationState from './states/MutationState';
@@ -24,6 +25,13 @@ export default class Form {
   observable = new Subject();
 
   /**
+   * Подписка на прослушивание модели. Форма следит за атрибутами
+   * Если приходит UnvalidatedState - автоматически перевалидируем аттрибут
+   * @type {Subscription}
+   */
+  subscription;
+
+  /**
    * Create Form instance
    * @param model {Model}
    */
@@ -33,6 +41,14 @@ export default class Form {
     }
 
     this.model = model;
+
+    this.subscription = model.getValidationObservable().subscribe((state) => {
+      if (state instanceof UnvalidatedState) {
+        return this.validateAttributes([state.attribute]);
+      }
+
+      return null;
+    });
   }
 
   /**
@@ -65,6 +81,24 @@ export default class Form {
    */
   getScenario() {
     return this.getModel().getScenario();
+  }
+
+  /**
+   * Установка сценария
+   * Сценариев может быть несколько
+   * @param {Array<string>|string} scenario
+   */
+  addScenario(scenario) {
+    this.getModel().addScenario(scenario);
+  }
+
+  /**
+   * Установка сценария
+   * Сценариев может быть несколько
+   * @param {Array<string>|string} scenario
+   */
+  removeScenario(scenario) {
+    this.getModel().removeScenario(scenario);
   }
 
   /**
@@ -178,7 +212,7 @@ export default class Form {
   setAttributesAndValidate(values) {
     this.setAttributes(values);
 
-    return this.validateAttributes(values);
+    return this.validateAttributes(Object.keys(values));
   }
 
   /**
@@ -211,8 +245,8 @@ export default class Form {
     return this.getModel().isAttributeChanged(attribute);
   }
 
-  isAttributeEditable(attribute) {
-    return this.getModel().isAttributeEditable(attribute);
+  isAttributeSafe(attribute) {
+    return this.getModel().isAttributeSafe(attribute);
   }
 
   validate() {
@@ -262,7 +296,7 @@ export default class Form {
   /**
    * Get attribute's validation state object
    * @param attribute
-   * @returns {PendingState|WarningState|SuccessState|ErrorState|PristineState}
+   * @returns {PendingState|WarningState|SuccessState|ErrorState|PristineState|UnvalidatedState}
    */
   getAttributeState(attribute) {
     return this.getModel().getAttributeState(attribute);
@@ -271,10 +305,19 @@ export default class Form {
   /**
    * Returns current attribute state object or null
    * @param attribute
-   * @returns {string}
+   * @returns {PendingState|WarningState|SuccessState|ErrorState|PristineState|UnvalidatedState}
    */
   getValidationState(attribute) {
     return this.getModel().getValidationState(attribute);
+  }
+
+  /**
+   * Returns current attribute state object or null
+   * @param {string} attribute
+   * @returns {string}
+   */
+  getValidationStatus(attribute) {
+    return this.getModel().getValidationStatus(attribute);
   }
 
   /**
@@ -284,14 +327,6 @@ export default class Form {
    */
   getValidationError(attribute) {
     return this.getModel().getValidationError(attribute);
-  }
-
-  /**
-   *
-   * @returns {Array.<SuccessState|WarningState|ErrorState|PendingState>}
-   */
-  getValidationErrors() {
-    return this.getModel().getValidationErrors();
   }
 
   /**
@@ -310,6 +345,31 @@ export default class Form {
    */
   getValidationWarning(attribute) {
     return this.getModel().getValidationWarning(attribute);
+  }
+
+  /**
+   * Get attributes's warning validation message
+   * @param {string} attribute
+   * @returns {boolean}
+   */
+  getValidationPending(attribute) {
+    return this.getModel().getValidationPending(attribute);
+  }
+
+  /**
+   * Returns an array of error states if exists
+   * @returns {Array<ErrorState>}
+   */
+  getValidationErrors() {
+    return this.getModel().getValidationErrors();
+  }
+
+  /**
+   * Returns an array of warning states if exists
+   * @returns {Array<WarningState>}
+   */
+  getValidationWarnings() {
+    return this.getModel().getValidationWarnings();
   }
 
   /**

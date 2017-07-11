@@ -222,7 +222,7 @@ describe('Test Form.js', () => {
 
     form.validate();
 
-    expect(form.dirtyAttributes).toEqual(['name', 'password']);
+    expect(form.dirtyAttributes).toEqual(['name', 'password', 'nested.value']);
   });
 
   test('validateAttributes()', async () => {
@@ -288,7 +288,7 @@ describe('FormStateSubject', async () => {
     form.setAttribute('name', '');
     await form.validate();
 
-    expect(observer).toHaveBeenCalledTimes(4);
+    expect(observer).toHaveBeenCalledTimes(11);
   });
 
   test('whenForm with restrictions', async () => {
